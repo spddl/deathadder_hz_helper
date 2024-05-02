@@ -41,7 +41,7 @@ fn get_device_info<'a>(
     return Err("invalid version");
 }
 
-fn send_cmd(hid_result: &HidDevice, cmd: Vec<u8>, args: Vec<u8>, footer: u8) {
+fn send_cmd(hid_result: &HidDevice, cmd: Vec<u8>, args: Vec<u8>, footer: u8) -> i32 {
     // Buffer used to communicate
     let mut buf = Vec::with_capacity(256);
 
@@ -211,7 +211,7 @@ fn main() {
             1000 => (vec![0x01, 0x00, 0x05, 0x01], 0x00, 0x05),
             _ => unreachable!(),
         };
-        send_cmd(&hid_result, cmd, vec![cmdargs], footer);
+        errorcode += send_cmd(&hid_result, cmd, vec![cmdargs], footer);
     }
 
     if let Some(whz) = args.whz {
@@ -253,6 +253,9 @@ fn main() {
             8000 => (vec![0x02, 0x00, 0x40, 0x01], 0x01, 0x42),
             _ => unreachable!(),
         };
-        send_cmd(&hid_result, cmd, vec![cmdargs], footer);
     }
+
+    #[cfg(debug_assertions)]
+    println!("errorcode: {:?}", errorcode);
+    std::process::exit(errorcode)
 }

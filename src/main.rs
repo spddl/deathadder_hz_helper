@@ -1,5 +1,4 @@
-#![windows_subsystem = "windows"]
-
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use hidapi::{DeviceInfo, HidApi, HidDevice};
 
 const VID: u16 = 0x1532;
@@ -22,7 +21,7 @@ fn get_device_info<'a>(
         }
 
         if cfg!(debug_assertions) {
-            println!("path: {:?}", device.path());
+            println!("Path: {:?}", device.path());
             println!(
                 "Bus {:03} Device {:03} Face {} ID {:04x}:{:04x}",
                 device.usage(),
@@ -31,9 +30,6 @@ fn get_device_info<'a>(
                 device.vendor_id(),
                 device.product_id()
             );
-
-            println!("path: {:?}", device.path());
-            println!("{:04x}:{:04x}", device.vendor_id(), device.product_id());
         }
 
         return Ok(device);
@@ -205,8 +201,6 @@ fn main() {
         // let footer: u8 = 0x05;
         let (cmd, cmdargs, footer) = match hz {
             125 => (vec![0x01, 0x00, 0x05, 0x08], 0x00, 0x0c),
-            500 => (vec![0x01, 0x00, 0x05, 0x08], 0x00, 0x0c),
-            1000 => (vec![0x01, 0x00, 0x05, 0x08], 0x00, 0x0c),
             500 => (vec![0x01, 0x00, 0x05, 0x02], 0x00, 0x06),
             1000 => (vec![0x01, 0x00, 0x05, 0x01], 0x00, 0x05),
             _ => unreachable!(),
@@ -253,6 +247,7 @@ fn main() {
             8000 => (vec![0x02, 0x00, 0x40, 0x01], 0x01, 0x42),
             _ => unreachable!(),
         };
+        errorcode += send_cmd(&hid_result, cmd, vec![cmdargs], footer);
     }
 
     #[cfg(debug_assertions)]

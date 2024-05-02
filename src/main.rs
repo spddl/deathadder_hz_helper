@@ -76,6 +76,7 @@ struct AppArgs {
     usage: u16,
     usagepage: u16,
 
+    dpi: Option<u16>,
     hz: Option<u16>,
     whz: Option<u16>,
 }
@@ -108,6 +109,8 @@ fn parse_args() -> Result<AppArgs, pico_args::Error> {
             .opt_value_from_fn("--usagepage", parse_number)?
             .unwrap_or(USAGEPAGE),
 
+        dpi: pargs.opt_value_from_str("--dpi")?,
+
         hz: pargs.opt_value_from_str("--hz")?,
 
         whz: pargs.opt_value_from_str("--whz")?,
@@ -139,6 +142,16 @@ fn main() {
     };
 
     let hid_result = hidapi.open_path(device_info_path).unwrap();
+
+    let mut errorcode: i32 = 0;
+
+    if let Some(dpi) = args.dpi {
+        let cmd: Vec<u8> = vec![0x07, 0x04, 0x05, 0x01];
+        let mut args = dpi.to_be_bytes().to_vec();
+        args.extend(args.clone()); // Duplicate it's size
+        let footer = 0x07;
+        errorcode += send_cmd(&hid_result, cmd, args, footer);
+    }
 
     if let Some(hz) = args.hz {
         // 125

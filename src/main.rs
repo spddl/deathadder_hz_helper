@@ -65,7 +65,42 @@ fn send_cmd(hid_result: &HidDevice, cmd: Vec<u8>, args: Vec<u8>, footer: u8) {
     #[cfg(debug_assertions)]
     println!("{:02X?}", &buf);
 
-    hid_result.send_feature_report(&buf).unwrap();
+    // Try 4 times to communicate with the device successfully.
+    // If no success, exit.
+    for trail in 0..4 {
+        // Send command to DeathAdder, skip if error
+        if let Err(err) = hid_result.send_feature_report(&buf) {
+            eprintln!("send_feature_report: {}", err);
+            eprintln!("error, trying again maybe this time it'll work shit");
+            continue;
+        }
+
+        // Communication: receive response from mouse
+        // We are overwriting the same buffer used for sending the message
+        if let Err(err) = hid_result.get_feature_report(&mut buf.as_mut()) {
+            eprintln!("get_feature_report: {}", err);
+            continue;
+        }
+
+        match buf[1] {
+            // Check if device responded successfully
+            // We expect the same values as librazer/razercfg does
+            0..=3 => {
+                #[cfg(debug_assertions)]
+                println!("DONE!");
+                return trail;
+            }
+            other => {
+                eprintln!(
+                    "Command failed: Device did not answered what we expected: '{}'.\ncmd_bytes: \
+                    {:#?}",
+                    other, cmd
+                );
+                return trail + 1;
+            }
+        }
+    }
+    return -1;
 }
 
 #[derive(Debug)]
